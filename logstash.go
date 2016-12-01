@@ -4,7 +4,7 @@ import (
 	"net"
 	"strings"
 
-	"github.com/Sirupsen/logrus"
+	"github.com/TykTechnologies/logrus"
 )
 
 // Hook represents a connection to a Logstash instance

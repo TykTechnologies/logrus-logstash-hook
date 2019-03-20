@@ -1,10 +1,12 @@
 package logrus_logstash
 
 import (
+	"crypto/tls"
 	"net"
 	"strings"
 
 	"github.com/TykTechnologies/logrus"
+	"github.com/TykTechnologies/tyk/config"
 )
 
 // Hook represents a connection to a Logstash instance
@@ -23,6 +25,9 @@ func NewHook(protocol, address, appName string) (*Hook, error) {
 
 // NewHookWithConn creates a new hook to a Logstash instance, using the supplied connection
 func NewHookWithConn(conn net.Conn, appName string) (*Hook, error) {
+	if config.Global().LogstashTLS {
+		WrapTLSClient(conn, config.Global().LogstashTLSSkipVerify)
+	}
 	return NewHookWithFieldsAndConn(conn, appName, make(logrus.Fields))
 }
 
@@ -39,7 +44,18 @@ func NewHookWithFieldsAndPrefix(protocol, address, appName string, alwaysSentFie
 	if err != nil {
 		return nil, err
 	}
+	if config.Global().LogstashTLS {
+		WrapTLSClient(conn, config.Global().LogstashTLSSkipVerify)
+	}
 	return NewHookWithFieldsAndConnAndPrefix(conn, appName, alwaysSentFields, prefix)
+}
+
+// wraps the existing connection in tls
+func WrapTLSClient(conn net.Conn, insecureSkipVerify bool) net.Conn {
+	conf := &tls.Config{
+		InsecureSkipVerify: insecureSkipVerify,
+	}
+	return tls.Client(conn, conf)
 }
 
 // NewHookWithFieldsAndConn creates a new hook to a Logstash instance using the supplied connection
